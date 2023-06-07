@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 const employeeModel = require('./employeeModel')
 
 const companyShema = new mongoose.Schema({
     name: {
         type: String,
-        unique: true, 
         validate: {
             validator: function(v){
                 return /^[A-Za-zÀ-ÖØ-öø-ÿ '-]{2,}$/.test(v);
@@ -13,7 +13,7 @@ const companyShema = new mongoose.Schema({
     },
     siret: {
         type: Number,
-        unique: true, 
+       
         validate: {
             validator: function(v){
                 return /^\d{14}$/.test(v);
@@ -44,7 +44,14 @@ const companyShema = new mongoose.Schema({
             }
         }
     },
-    employees: [ employeeModel.schema],
+    //employees: [ employeeModel.schema],
+    employees:  [
+        { 
+            type: Schema.Types.ObjectId, 
+            ref: 'employees' 
+        },
+        
+    ]
 })
 
 const companyModel = mongoose.model("companys", companyShema);

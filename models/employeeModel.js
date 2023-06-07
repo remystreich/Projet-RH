@@ -2,18 +2,11 @@ const mongoose = require('mongoose');
 const { v4: uuidv4 } = require('uuid');
 
 const employeeShema = new mongoose.Schema({
-    name: {
-        type: String,
-        validate: {
-            validator: function(v){
-                return /^[A-Za-zÀ-ÖØ-öø-ÿ -]{2,}$/.test(v);
-            }
-        }
-    },
+   name:{
+    type:String
+   },
     photo: {
         type: String,
-        
-       
     },
     fonction: {
         type: String,
