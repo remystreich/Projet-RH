@@ -7,11 +7,30 @@ const fs = require('fs');
 
 
 ///page dashboard
-dashboardRouter.get('/dashboard',  authguard, async (req, res) => {
+dashboardRouter.get('/dashboard', authguard, async (req, res) => {
     try {
-        let company = await companyModel.findOne({_id: req.session.userId}).populate("employees")
+        console.log(req.query);
+        let company = await companyModel.findOne({ _id: req.session.userId }).populate("employees")
+        let employees = company.employees;
+        let search = req.query.search;
+        let selectedFunctions = req.query.fonction;
+        if (search) {
+            employees = employees.filter(employees => {
+                return employees.name.toLowerCase().includes(search.toLowerCase());
+            });
+        }
+        // Filtrer les employés par fonction sélectionnée
+        if (selectedFunctions) {
+            employees = employees.filter(employee => {
+                return selectedFunctions.includes(employee.fonction);
+            });
+        }
+        const employeeFunctions = Array.from(new Set(company.employees.map(employee => employee.fonction)));
         res.render('templates/dashboard.twig', {
-           employees: company.employees
+            employees: employees,
+            search: search,
+            filterFunction: selectedFunctions,
+            fonctions: employeeFunctions,
         })
     } catch (error) {
         console.log(error);
@@ -20,7 +39,7 @@ dashboardRouter.get('/dashboard',  authguard, async (req, res) => {
 })
 
 ///page addemployee
-dashboardRouter.get('/addemployee',  authguard, async (req, res) => {
+dashboardRouter.get('/addemployee', authguard, async (req, res) => {
     try {
         res.render('templates/addemployee.twig')
     } catch (error) {
@@ -33,14 +52,14 @@ dashboardRouter.get('/addemployee',  authguard, async (req, res) => {
 dashboardRouter.post('/addemployee', authguard, upload.single('photo'), async (req, res) => {  //enregistrement d'une image avec multer avec upload.single(une seule image) et entre paranthese le name de l'input 
     try {
         let employee = new employeeModel(req.body)   //nouvel objet "project" constitué du form de la requete
-        if (req.file){                              //si il y'a une image dans la requete
+        if (req.file) {                              //si il y'a une image dans la requete
             employee.photo = req.file.filename;      //ajout du nom de l'image à l'objet project
         }
-        else{
+        else {
             employee.photo = ""                      //sinon nom vide
         }
         await employee.save()                        //enregistrement en bdd du project
-        await companyModel.updateOne({_id: req.session.userId}, {$push: { employees: employee}})
+        await companyModel.updateOne({ _id: req.session.userId }, { $push: { employees: employee } })
         res.redirect('/dashboard')
     }
     catch (error) {
@@ -52,23 +71,28 @@ dashboardRouter.post('/addemployee', authguard, upload.single('photo'), async (r
 //supprimer un employé
 dashboardRouter.get('/deleteEmployee/:id', authguard, async (req, res) => {
     try {
+        let ids = req.params.id.split(',')
         let company = req.session.user
-        let employee = await employeeModel.findOne({_id: req.params.id})
-        // Vérifier si l'employé a une image associée
-        if (employee.photo) {
-            // Supprimer le fichier d'image
-            fs.unlink(`views/assets/img/uploads/${employee.photo}`, (err) => {
-                if (err) {
-                    console.error('Erreur lors de la suppression du fichier :', err);
-                    // Gérer l'erreur de suppression du fichier
-                } else {
-                    console.log('Fichier supprimé avec succès');
+        for (let i = 0; i < ids.length; i++) {
+            if (ids[i]) {
+                let employee = await employeeModel.findOne({ _id: ids[i] })
+                // Vérifier si l'employé a une image associée
+                if (employee.photo) {
+                    // Supprimer le fichier d'image
+                    fs.unlink(`views/assets/img/uploads/${employee.photo}`, (err) => {
+                        if (err) {
+                            console.error('Erreur lors de la suppression du fichier :', err);
+                            // Gérer l'erreur de suppression du fichier
+                        } else {
+                            console.log('Fichier supprimé avec succès');
+                        }
+                    });
                 }
-            });
+            company.employees.pull(employee)
+            await company.updateOne(company)
+            await employeeModel.deleteOne({ _id: ids[i] })
         }
-        company.employees.pull(employee)
-        await company.updateOne(company)
-        await employeeModel.deleteOne({ _id: req.params.id })
+    }
         res.redirect('/dashboard')
     } catch (error) {
         console.log(error)
@@ -77,13 +101,13 @@ dashboardRouter.get('/deleteEmployee/:id', authguard, async (req, res) => {
 })
 
 //blamer employé
-dashboardRouter.get('/blame/:id', authguard , async (req, res) => {
+dashboardRouter.get('/blame/:id', authguard, async (req, res) => {
     try {
-        let employee = await employeeModel.findOne({_id: req.params.id})
+        let employee = await employeeModel.findOne({ _id: req.params.id })
         employee.blames++
         if (employee.blames >= 3) {
             let company = req.session.user
-        // Vérifier si l'employé a une image associée
+            // Vérifier si l'employé a une image associée
             if (employee.photo) {
                 // Supprimer le fichier d'image
                 fs.unlink(`views/assets/img/uploads/${employee.photo}`, (err) => {
@@ -99,7 +123,7 @@ dashboardRouter.get('/blame/:id', authguard , async (req, res) => {
             await company.updateOne(company)
             await employeeModel.deleteOne({ _id: req.params.id })
         }
-    
+
         await employee.updateOne(employee)
         res.redirect('/dashboard')
     } catch (error) {
@@ -111,7 +135,7 @@ dashboardRouter.get('/blame/:id', authguard , async (req, res) => {
 //afficher un employé avant de le modifier
 dashboardRouter.get('/updateEmployee/:id', authguard, async (req, res) => {
     try {
-        let employee = await employeeModel.findOne({_id: req.params.id})
+        let employee = await employeeModel.findOne({ _id: req.params.id })
         res.render("templates/addEmployee.twig", {
             employee: employee,                    //récupérer le projet par rapport à l'id envoyé en requete                  //surbrillance de l'onglet
         })
@@ -125,16 +149,16 @@ dashboardRouter.get('/updateEmployee/:id', authguard, async (req, res) => {
 //modifier l'employé'
 dashboardRouter.post('/updateEmployee/:id', authguard, upload.single('photo'), async (req, res) => {
     try {
-        let employee = await employeeModel.findOne({_id: req.params.id})
+        let employee = await employeeModel.findOne({ _id: req.params.id })
         let company = req.session.user
         let update = req.body                                                     // creation de l'objet update avec les elm du form de la requete
-        if (req.file){                                                            // si une image est en requete
+        if (req.file) {                                                            // si une image est en requete
             if (employee.photo) {                                                  //si une image est déja en bdd
                 fs.unlink(`views/assets/img/uploads/${employee.photo}`);           // Supprimer le fichier d'image
             }
             update.photo = req.file.filename                                      //ajout du nom de l'image à l'objet update
-        }else{
-            update.photo= employee.photo
+        } else {
+            update.photo = employee.photo
         }
         await employee.updateOne(update)
         res.redirect('/dashboard')
@@ -143,5 +167,25 @@ dashboardRouter.post('/updateEmployee/:id', authguard, upload.single('photo'), a
         res.send(error)
     }
 })
+
+//test
+dashboardRouter.get('/test/:id', authguard, async (req, res) => {
+    try {
+        let ids = req.params.id.split(',')
+
+        for (let i = 0; i < ids.length; i++) {
+
+
+            employee = await employeeModel.findOne({ _id: ids[i] })
+            console.log(employee);
+
+        }
+        res.redirect('/dashboard')
+    } catch (error) {
+        console.log(error)
+        res.send(error)
+    }
+})
+
 
 module.exports = dashboardRouter
