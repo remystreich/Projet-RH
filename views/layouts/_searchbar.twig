@@ -19,12 +19,12 @@
 						<h6 class="mb-3 text-sm font-medium text-gray-900 dark:text-white">
 							Fonction
 						</h6>
-						<ul class="space-y-2 text-sm" aria-labelledby="dropdownDefault">
+						<ul class="space-y-2 text-sm" >
 							{% for fonction in fonctions %}
 								<li class="flex items-center">
-									<input id="{{fonction}}" name="fonction" type="checkbox" value="{{fonction}}" class="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"/>
-									<label for="{{fonction}}" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-										{{fonction}}
+									<input id="{{fonction.fonction}}" name="fonction" type="checkbox" value="{{fonction.fonction}}" class="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"/>
+									<label for="{{fonction.fonction}}" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+										{{fonction.fonction}}
 									</label>
 								</li>
 							{% endfor %}
@@ -44,7 +44,7 @@
 					<div id="actionsDropdown" class="z-10 hidden bg-white divide-y divide-gray-100 rounded shadow w-44 dark:bg-gray-700 dark:divide-gray-600">
 						<ul class="py-1 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="actionsDropdownButton">
 							<li>
-								<a href="#" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Blamer tous</a>
+								<a href="/blame/{% for employee in employees %}{{employee.id}},{% endfor %}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Blamer tous</a>
 							</li>
 						</ul>
 						<div class="py-1">

@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const employeeModel = require('./employeeModel')
+
 
 const companyShema = new mongoose.Schema({
     name: {
@@ -50,7 +50,12 @@ const companyShema = new mongoose.Schema({
             type: Schema.Types.ObjectId, 
             ref: 'employees' 
         },
-        
+    ],
+    fonctions: [
+        {
+            type: Schema.Types.ObjectId, 
+            ref: 'fonctions' 
+        }
     ]
 })
 

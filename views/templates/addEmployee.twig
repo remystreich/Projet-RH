@@ -3,8 +3,8 @@
 	<div class="w-100 mx-auto px-6 sm:max-w-2xl md:max-w-3xl md:px-12 lg:max-w-5xl xl:max-w-7xl xl:px-32">
 		<div class="text-center">
 			<div class="block rounded-lg bg-[hsla(0,0%,100%,0.8)] px-6 py-12 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)]  md:py-16 md:px-12" style="
-													            margin-top: 180px;
-													            backdrop-filter: saturate(200%) blur(25px);">
+																		            margin-top: 180px;
+																		            backdrop-filter: saturate(200%) blur(25px);">
 				<div class="max-w-2xl px-4 py-8 mx-auto lg:py-16">
 					<h2 class="mb-4 text-xl font-bold text-gray-900 ">Ajouter un nouvel employé</h2>
 					<form method="POST" {% if employee %} action="/updateEmployee/{{employee.id}}" {% else %} action="/addemployee" {% endif %} class="flex items-center space-x-6" enctype="multipart/form-data">
@@ -13,22 +13,24 @@
 								<label for="name" class="block mb-2 text-sm font-medium text-gray-900 ">Nom de l'employé</label>
 								<input type="text" name="name" id="name" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 " {% if employee %} value="{{employee.name}}" {% endif %} placeholder="Nom de l'employé" required="">
 							</div>
-							<div class="w-full">
-								<label for="fonction" class="block mb-2 text-sm font-medium text-gray-900 ">Fonction</label>
-								<input type="text" name="fonction" id="fonction" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 " {% if employee %} value="{{employee.fonction}}" {% endif %} placeholder="Fonction" required="">
-							</div>
+							
 							<div class="w-full">
 								<label for="blames" class="block mb-2 text-sm font-medium text-gray-900 ">Blames</label>
 								<input type="number" name="blames" id="blames" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 " {% if employee %} value="{{employee.blames}}" {% else %} value="0" {% endif %} placeholder="Blames" required="">
 							</div>
+							
 							<div class="w-full">
 								<div class="shrink-0">
-									<img class="h-16 w-16 object-cover rounded-full" {% if employee %} src="/img/uploads/{{employee.photo}}" {% else %} src="https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1361&q=80" {% endif %} alt="Current profile photo"/>
+									<img class="h-16 w-16 object-cover rounded-full" {% if employee %} src="/img/uploads/{{employee.photo}}" {% else %} src="/img/user.png" {% endif %} alt="Current profile photo"/>
 								</div>
 								<label class="block">
 									<span class="sr-only">Choisissez une photo de profil</span>
-									<input type="file" name="photo" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"/>																				    
+									<input type="file" name="photo" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"/>
 								</label>
+							</div>
+							<div class="w-full">
+								<label for="fonction" class="block mb-2 text-sm font-medium text-gray-900 ">Fonction</label>
+								<input type="text" name="fonction" id="fonction" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 " {% if employee %} value="{{employee.fonction}}" {% endif %} placeholder="Fonction" required="">
 							</div>
 						</div>
 						<div class="flex items-center space-x-4">
@@ -45,4 +47,11 @@
 			</div>
 		</div>
 	</div>
+{% endblock %}
+{% block script %}
+	
+	<script>
+    	var employeeData = JSON.parse('{{ fonctions }}');
+	</script>
+	<script src="/js/script.js"></script>
 {% endblock %}

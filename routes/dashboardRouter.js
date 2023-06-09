@@ -1,6 +1,7 @@
 const dashboardRouter = require('express').Router();
 const companyModel = require('../models/companyModel');
 const employeeModel = require('../models/employeeModel')
+const fonctionModel = require('../models/fonctionModel')
 const authguard = require("../services/authguard")
 const upload = require('../services/multer')
 const fs = require('fs');
@@ -9,7 +10,6 @@ const fs = require('fs');
 ///page dashboard
 dashboardRouter.get('/dashboard', authguard, async (req, res) => {
     try {
-        console.log(req.query);
         let company = await companyModel.findOne({ _id: req.session.userId }).populate("employees")
         let employees = company.employees;
         let search = req.query.search;
@@ -25,12 +25,13 @@ dashboardRouter.get('/dashboard', authguard, async (req, res) => {
                 return selectedFunctions.includes(employee.fonction);
             });
         }
-        const employeeFunctions = Array.from(new Set(company.employees.map(employee => employee.fonction)));
+        let companyFonctions = await companyModel.findOne({ _id: req.session.userId }).populate("fonctions")
+        let fonctions = companyFonctions.fonctions;
         res.render('templates/dashboard.twig', {
             employees: employees,
             search: search,
             filterFunction: selectedFunctions,
-            fonctions: employeeFunctions,
+            fonctions: fonctions,
         })
     } catch (error) {
         console.log(error);
@@ -41,7 +42,14 @@ dashboardRouter.get('/dashboard', authguard, async (req, res) => {
 ///page addemployee
 dashboardRouter.get('/addemployee', authguard, async (req, res) => {
     try {
-        res.render('templates/addemployee.twig')
+        // let fonctions = await fonctionModel.find()
+
+        let companyFonctions = await companyModel.findOne({ _id: req.session.userId }).populate("fonctions")
+        let fonctions = JSON.stringify(companyFonctions.fonctions);
+       console.log(fonctions);
+        res.render('templates/addemployee.twig',{
+            fonctions: fonctions,
+        })
     } catch (error) {
         console.log(error);
         res.json(error)
@@ -49,17 +57,27 @@ dashboardRouter.get('/addemployee', authguard, async (req, res) => {
 })
 
 //ajouter employé
-dashboardRouter.post('/addemployee', authguard, upload.single('photo'), async (req, res) => {  //enregistrement d'une image avec multer avec upload.single(une seule image) et entre paranthese le name de l'input 
+dashboardRouter.post('/addemployee', authguard, upload.single('photo'), async (req, res) => {  
     try {
-        let employee = new employeeModel(req.body)   //nouvel objet "project" constitué du form de la requete
-        if (req.file) {                              //si il y'a une image dans la requete
-            employee.photo = req.file.filename;      //ajout du nom de l'image à l'objet project
+        let employee = new employeeModel(req.body)   
+        if (req.file) {                              
+            employee.photo = req.file.filename;      
         }
         else {
-            employee.photo = ""                      //sinon nom vide
+            employee.photo = ""                      
         }
-        await employee.save()                        //enregistrement en bdd du project
+        await employee.save()                        
         await companyModel.updateOne({ _id: req.session.userId }, { $push: { employees: employee } })
+
+        let companyFonctions = await companyModel.findOne({ _id: req.session.userId }).populate("fonctions")
+        let fonctions = companyFonctions.fonctions
+        let existingFunction = fonctions.find(fonction => fonction.fonction === req.body.fonction);
+        if (!existingFunction) {
+          // La fonction n'existe pas, vous pouvez créer un nouvel enregistrement
+          let fonction = new fonctionModel(req.body);
+          await fonction.save();
+          await companyModel.updateOne({ _id: req.session.userId }, { $push: { fonctions: fonction } });
+        }
         res.redirect('/dashboard')
     }
     catch (error) {
@@ -88,11 +106,11 @@ dashboardRouter.get('/deleteEmployee/:id', authguard, async (req, res) => {
                         }
                     });
                 }
-            company.employees.pull(employee)
-            await company.updateOne(company)
-            await employeeModel.deleteOne({ _id: ids[i] })
+                company.employees.pull(employee)
+                await company.updateOne(company)
+                await employeeModel.deleteOne({ _id: ids[i] })
+            }
         }
-    }
         res.redirect('/dashboard')
     } catch (error) {
         console.log(error)
@@ -103,28 +121,32 @@ dashboardRouter.get('/deleteEmployee/:id', authguard, async (req, res) => {
 //blamer employé
 dashboardRouter.get('/blame/:id', authguard, async (req, res) => {
     try {
-        let employee = await employeeModel.findOne({ _id: req.params.id })
-        employee.blames++
-        if (employee.blames >= 3) {
-            let company = req.session.user
-            // Vérifier si l'employé a une image associée
-            if (employee.photo) {
-                // Supprimer le fichier d'image
-                fs.unlink(`views/assets/img/uploads/${employee.photo}`, (err) => {
-                    if (err) {
-                        console.error('Erreur lors de la suppression du fichier :', err);
-                        // Gérer l'erreur de suppression du fichier
-                    } else {
-                        console.log('Fichier supprimé avec succès');
+        let ids = req.params.id.split(',')
+        for (let i = 0; i < ids.length; i++) {
+            if (ids[i]) {
+                let employee = await employeeModel.findOne({ _id: ids[i] })
+                employee.blames++
+                if (employee.blames >= 3) {
+                    let company = req.session.user
+                    // Vérifier si l'employé a une image associée
+                    if (employee.photo) {
+                        // Supprimer le fichier d'image
+                        fs.unlink(`views/assets/img/uploads/${employee.photo}`, (err) => {
+                            if (err) {
+                                console.error('Erreur lors de la suppression du fichier :', err);
+                                // Gérer l'erreur de suppression du fichier
+                            } else {
+                                console.log('Fichier supprimé avec succès');
+                            }
+                        });
                     }
-                });
+                    company.employees.pull(employee)
+                    await company.updateOne(company)
+                    await employeeModel.deleteOne({ _id: ids[i] })
+                }
+                await employee.updateOne(employee)
             }
-            company.employees.pull(employee)
-            await company.updateOne(company)
-            await employeeModel.deleteOne({ _id: req.params.id })
         }
-
-        await employee.updateOne(employee)
         res.redirect('/dashboard')
     } catch (error) {
         console.log(error)
@@ -136,8 +158,10 @@ dashboardRouter.get('/blame/:id', authguard, async (req, res) => {
 dashboardRouter.get('/updateEmployee/:id', authguard, async (req, res) => {
     try {
         let employee = await employeeModel.findOne({ _id: req.params.id })
+        let fonctions = await fonctionModel.find()
         res.render("templates/addEmployee.twig", {
-            employee: employee,                    //récupérer le projet par rapport à l'id envoyé en requete                  //surbrillance de l'onglet
+            employee: employee, 
+            fonctions: fonctions,                   
         })
     }
     catch (error) {
@@ -161,24 +185,14 @@ dashboardRouter.post('/updateEmployee/:id', authguard, upload.single('photo'), a
             update.photo = employee.photo
         }
         await employee.updateOne(update)
-        res.redirect('/dashboard')
-    } catch (error) {
-        console.log(error)
-        res.send(error)
-    }
-})
-
-//test
-dashboardRouter.get('/test/:id', authguard, async (req, res) => {
-    try {
-        let ids = req.params.id.split(',')
-
-        for (let i = 0; i < ids.length; i++) {
-
-
-            employee = await employeeModel.findOne({ _id: ids[i] })
-            console.log(employee);
-
+        let companyFonctions = await companyModel.findOne({ _id: req.session.userId }).populate("fonctions")
+        let fonctions = companyFonctions.fonctions
+        let existingFunction = fonctions.find(fonction => fonction.fonction === req.body.fonction);
+        if (!existingFunction) {
+          // La fonction n'existe pas, vous pouvez créer un nouvel enregistrement
+          let fonction = new fonctionModel(req.body);
+          await fonction.save();
+          await companyModel.updateOne({ _id: req.session.userId }, { $push: { fonctions: fonction } });
         }
         res.redirect('/dashboard')
     } catch (error) {
@@ -187,5 +201,45 @@ dashboardRouter.get('/test/:id', authguard, async (req, res) => {
     }
 })
 
+//editer fonctions
+dashboardRouter.get('/updateFonctions', authguard , async (req, res) => {
+    try {
+        let companyFonctions = await companyModel.findOne({ _id: req.session.userId }).populate("fonctions")
+        let fonctions = companyFonctions.fonctions;
+        // let fonctions = await fonctionModel.find()
+        res.render('templates/listFonction.twig', {
+            fonctions: fonctions,
+        })
+    } catch (error) {
+        console.log(error);
+        res.json(error)
+    }
+})
+
+//modifier fonction
+dashboardRouter.post('/updateFonction/:id', authguard, async (req, res) => {
+    try {
+        let fonction = await fonctionModel.findOne({ _id: req.params.id })        //creation de l'objet project à partir de l'elem trouvé en bdd par rapport à son id
+        let update = req.body                                                     // creation de l'objet update avec les elm du form de la requete
+       
+        await fonction.updateOne(update)
+       
+        res.redirect('/updateFonctions')
+    } catch (error) {
+        console.log(error)
+        res.send(error)
+    }
+})
+
+//supprimer une fonction
+dashboardRouter.get('/deleteFonction/:id', authguard, async (req, res) => {
+    try {
+        await fonctionModel.deleteOne({ _id: req.params.id })
+        res.redirect('/updateFonctions')
+    } catch (error) {
+        console.log(error)
+        res.send(error)
+    }
+})
 
 module.exports = dashboardRouter
