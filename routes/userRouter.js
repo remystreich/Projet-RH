@@ -27,13 +27,28 @@ userRouter.get('/signin', async (req, res) => {
 //signin
 userRouter.post('/signin', async (req, res) => {
     try {
-        req.body.password = bcrypt.hashSync(req.body.password, parseInt(process.env.SALT) );
-        let user = new companyModel(req.body);
-        await user.save();
-        res.redirect('/login')
+        if (req.body.password == req.body.confirmPassword) {
+            let findedCompany = await companyModel.findOne({mail: req.body.mail})
+            if (findedCompany) {
+                throw {errorMail: "Ce mail a déjà été utilisé"}
+            }
+            req.body.password = bcrypt.hashSync(req.body.password, parseInt(process.env.SALT) );
+            let user = new companyModel(req.body);
+            let err = user.validateSync()
+            if (err) {
+                throw err
+            }
+            await user.save();
+            res.redirect('/login')
+        }else{
+            throw {errorConfirmPass: "Les mots de passes ne sont pas identiques"}
+        }
+      
     } catch (error) {
-        console.log(error)
-        res.send(error)
+        console.log(error);
+        res.render('templates/signin.twig',{
+            errors: error
+        })
     }
 })
 
@@ -60,11 +75,11 @@ userRouter.post('/login', async (req, res) => {
                 res.redirect('/dashboard')
             }
             else {
-                throw { errorPass: "le mot de passe est incorect"}
+                throw { errorPass: "Mot de passe est incorect"}
             }
     
         }else{
-          throw { errorMail: "invalide mail"}
+          throw { errorMail: "Email invalide"}
         }
     }
     catch (error) {

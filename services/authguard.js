@@ -6,8 +6,6 @@ let authguard = async(req,res,next) =>{
             req.session.owner = true
             res.locals.user = user;
             req.session.user = user
-            console.log('ca marche');
-
             next()
         }else{
             req.session.owner = false

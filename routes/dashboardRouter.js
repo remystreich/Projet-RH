@@ -45,7 +45,7 @@ dashboardRouter.get('/addemployee', authguard, async (req, res) => {
         // let fonctions = await fonctionModel.find()
         let companyFonctions = await companyModel.findOne({ _id: req.session.userId }).populate("fonctions")
         let fonctions = JSON.stringify(companyFonctions.fonctions);
-        res.render('templates/addemployee.twig',{
+        res.render('templates/addEmployee.twig',{
             fonctions: fonctions,
         })
     } catch (error) {
@@ -157,7 +157,7 @@ dashboardRouter.get('/updateEmployee/:id', authguard, async (req, res) => {
     try {
         let employee = await employeeModel.findOne({ _id: req.params.id })
         let fonctions = await fonctionModel.find()
-        res.render("templates/addemployee.twig", {
+        res.render("templates/addEmployee.twig", {
             employee: employee, 
             fonctions: fonctions,                   
         })

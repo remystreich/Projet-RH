@@ -8,7 +8,7 @@ const companyShema = new mongoose.Schema({
         required:[true, "nom requis"],
         validate: {
             validator: function(v){
-                return /^[A-Za-zÀ-ÖØ-öø-ÿ '-]{2,}$/.test(v);
+                return /^[A-Za-zÀ-ÖØ-öø-ÿ '0-9-]{2,}$/.test(v);
             },
             message: "Veuillez entrer un nom valide"
         }
