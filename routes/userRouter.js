@@ -56,6 +56,7 @@ userRouter.post('/login', async (req, res) => {
         if (user){
             if (bcrypt.compareSync(req.body.password, user.password)) {
                 req.session.userId = user._id
+                console.log('taratata');
                 res.redirect('/dashboard')
             }
             else {

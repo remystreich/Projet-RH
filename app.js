@@ -14,10 +14,10 @@ app.use(session({
     resave: false,
     saveUninitialized: true
 }));
-app.use(function(req, res, next) {
-    req.session.userId = "6480589dca8e598608e7655b"
-    next()
-})
+// app.use(function(req, res, next) {
+//     req.session.userId =   process.env.USERID
+//     next()
+// })
 app.use(express.urlencoded({ extended: true }))
 app.use(userRouter);;
 app.use(dashboardRouter)

@@ -51,7 +51,8 @@
 {% block script %}
 	
 	<script>
-    	var employeeData = JSON.parse('{{ fonctions }}');
+    	var employeeData = JSON.parse(`{{ fonctions }}`);
+		console.log(employeeData);
 	</script>
 	<script src="/js/script.js"></script>
 {% endblock %}

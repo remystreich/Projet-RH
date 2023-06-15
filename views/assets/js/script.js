@@ -1,5 +1,3 @@
-
-console.log(employeeData);
 const fonctions = employeeData.map(data => {
     return { label: data.fonction, value: data.fonction };
   });

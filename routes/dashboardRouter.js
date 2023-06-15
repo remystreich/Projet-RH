@@ -43,10 +43,8 @@ dashboardRouter.get('/dashboard', authguard, async (req, res) => {
 dashboardRouter.get('/addemployee', authguard, async (req, res) => {
     try {
         // let fonctions = await fonctionModel.find()
-
         let companyFonctions = await companyModel.findOne({ _id: req.session.userId }).populate("fonctions")
         let fonctions = JSON.stringify(companyFonctions.fonctions);
-       console.log(fonctions);
         res.render('templates/addemployee.twig',{
             fonctions: fonctions,
         })
