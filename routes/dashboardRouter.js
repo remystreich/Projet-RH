@@ -157,7 +157,7 @@ dashboardRouter.get('/updateEmployee/:id', authguard, async (req, res) => {
     try {
         let employee = await employeeModel.findOne({ _id: req.params.id })
         let fonctions = await fonctionModel.find()
-        res.render("templates/addEmployee.twig", {
+        res.render("templates/addemployee.twig", {
             employee: employee, 
             fonctions: fonctions,                   
         })
